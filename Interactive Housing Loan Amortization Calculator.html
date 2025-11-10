@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Housing Loan Amortization Calculator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .input-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 20px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+        }
+        
+        .input-group {
+            flex: 1 1 200px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background-color 0.3s;
+            display: block;
+            margin: 20px auto;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        .summary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 20px;
+            padding: 20px;
+            background-color: #eaf2f8;
+            border-radius: 8px;
+        }
+        
+        .summary-item {
+            flex: 1 1 200px;
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .summary-item h3 {
+            margin-top: 0;
+            color: #2c3e50;
+            font-size: 18px;
+        }
+        
+        .summary-item p {
+            margin: 5px 0;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .amortization-table {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background-color: #3498db;
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        .highlight {
+            background-color: #fffde7 !important;
+            font-weight: bold;
+        }
+        
+        .export-btn {
+            background-color: #27ae60;
+            margin-top: 10px;
+        }
+        
+        .export-btn:hover {
+            background-color: #219653;
+        }
+        
+        .info-box {
+            background-color: #fffde7;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        @media (max-width: 768px) {
+            .input-section {
+                flex-direction: column;
+            }
+            
+            .summary {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏡 Housing Loan Amortization Calculator</h1>
+        
+        <div class="input-section">
+            <div class="input-group">
+                <label for="loanAmount">Loan Amount (₱):</label>
+                <input type="number" id="loanAmount" value="300000" min="1000" step="1000">
+            </div>
+            
+            <div class="input-group">
+                <label for="interestRate">Annual Interest Rate (%):</label>
+                <input type="number" id="interestRate" value="5.5" min="0.1" step="0.1" max="20">
+            </div>
+            
+            <div class="input-group">
+                <label for="loanTerm">Loan Term (years):</label>
+                <input type="number" id="loanTerm" value="30" min="1" max="50">
+            </div>
+            
+            <div class="input-group">
+                <label for="paymentFrequency">Payment Frequency:</label>
+                <select id="paymentFrequency">
+                    <option value="monthly">Monthly (12 payments/year)</option>
+                    <option value="annually">Annually (1 payment/year)</option>
+                </select>
+            </div>
+            
+            <div class="input-group">
+                <label for="startDate">First Payment Date:</label>
+                <input type="date" id="startDate" value="2025-12-01">
+            </div>
+        </div>
+        
+        <button id="calculateBtn">Calculate Amortization Schedule</button>
+        
+        <div id="summarySection" class="summary" style="display: none;">
+            <div class="summary-item">
+                <h3>Monthly Payment</h3>
+                <p id="monthlyPayment">₱0.00</p>
+            </div>
+            <div class="summary-item">
+                <h3>Total Payments</h3>
+                <p id="totalPayments">₱0.00</p>
+            </div>
+            <div class="summary-item">
+                <h3>Total Interest</h3>
+                <p id="totalInterest">₱0.00</p>
+            </div>
+            <div class="summary-item">
+                <h3>Final Payment Date</h3>
+                <p id="finalDate">-</p>
+            </div>
+        </div>
+        
+        <div id="amortizationSection" class="amortization-table" style="display: none;">
+            <h2>📊 Amortization Schedule</h2>
+            <div id="tableContainer"></div>
+            <button id="exportBtn" class="export-btn">Export as CSV</button>
+        </div>
+        
+        <div class="info-box">
+            <strong>Note:</strong> This calculator assumes fixed interest rates and equal periodic payments. 
+            For annual payments, interest accrues annually; for monthly, it accrues monthly.
+            Early payments reduce total interest significantly — consider making extra principal payments!
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const calculateBtn = document.getElementById('calculateBtn');
+            const exportBtn = document.getElementById('exportBtn');
+            const summarySection = document.getElementById('summarySection');
+            const amortizationSection = document.getElementById('amortizationSection');
+            const tableContainer = document.getElementById('tableContainer');
+            
+            calculateBtn.addEventListener('click', calculateAmortization);
+            exportBtn.addEventListener('click', exportCSV);
+            
+            function calculateAmortization() {
+                // Get input values
+                const loanAmount = parseFloat(document.getElementById('loanAmount').value);
+                const interestRate = parseFloat(document.getElementById('interestRate').value) / 100;
+                const loanTerm = parseInt(document.getElementById('loanTerm').value);
+                const paymentFrequency = document.getElementById('paymentFrequency').value;
+                const startDate = new Date(document.getElementById('startDate').value);
+                
+                if (isNaN(loanAmount) || isNaN(interestRate) || isNaN(loanTerm)) {
+                    alert('Please enter valid numbers for all fields.');
+                    return;
+                }
+                
+                let paymentAmount;
+                let totalPayments;
+                let totalInterest;
+                let finalDate;
+                let schedule = [];
+                
+                if (paymentFrequency === 'monthly') {
+                    // Monthly calculation
+                    const monthlyRate = interestRate / 12;
+                    const numPayments = loanTerm * 12;
+                    
+                    // Calculate monthly payment using formula
+                    paymentAmount = loanAmount * monthlyRate * Math.pow(1 + monthlyRate, numPayments) / 
+                                   (Math.pow(1 + monthlyRate, numPayments) - 1);
+                    
+                    totalPayments = paymentAmount * numPayments;
+                    totalInterest = totalPayments - loanAmount;
+                    
+                    // Calculate final date
+                    finalDate = new Date(startDate);
+                    finalDate.setMonth(finalDate.getMonth() + numPayments);
+                    
+                    // Generate amortization schedule
+                    let balance = loanAmount;
+                    let currentDate = new Date(startDate);
+                    
+                    for (let i = 1; i <= numPayments; i++) {
+                        const interestPayment = balance * monthlyRate;
+                        const principalPayment = paymentAmount - interestPayment;
+                        balance -= principalPayment;
+                        
+                        if (balance < 0) balance = 0;
+                        
+                        schedule.push({
+                            paymentNumber: i,
+                            date: new Date(currentDate),
+                            payment: paymentAmount,
+                            principal: principalPayment,
+                            interest: interestPayment,
+                            balance: balance
+                        });
+                        
+                        // Move to next month
+                        currentDate.setMonth(currentDate.getMonth() + 1);
+                    }
+                } else {
+                    // Annual calculation
+                    const annualRate = interestRate;
+                    const numPayments = loanTerm;
+                    
+                    // Calculate annual payment using formula
+                    paymentAmount = loanAmount * annualRate * Math.pow(1 + annualRate, numPayments) / 
+                                   (Math.pow(1 + annualRate, numPayments) - 1);
+                    
+                    totalPayments = paymentAmount * numPayments;
+                    totalInterest = totalPayments - loanAmount;
+                    
+                    // Calculate final date
+                    finalDate = new Date(startDate);
+                    finalDate.setFullYear(finalDate.getFullYear() + numPayments);
+                    
+                    // Generate amortization schedule
+                    let balance = loanAmount;
+                    let currentDate = new Date(startDate);
+                    
+                    for (let i = 1; i <= numPayments; i++) {
+                        const interestPayment = balance * annualRate;
+                        const principalPayment = paymentAmount - interestPayment;
+                        balance -= principalPayment;
+                        
+                        if (balance < 0) balance = 0;
+                        
+                        schedule.push({
+                            paymentNumber: i,
+                            date: new Date(currentDate),
+                            payment: paymentAmount,
+                            principal: principalPayment,
+                            interest: interestPayment,
+                            balance: balance
+                        });
+                        
+                        // Move to next year
+                        currentDate.setFullYear(currentDate.getFullYear() + 1);
+                    }
+                }
+                
+                // Display results
+                document.getElementById('monthlyPayment').textContent = formatCurrency(paymentAmount);
+                document.getElementById('totalPayments').textContent = formatCurrency(totalPayments);
+                document.getElementById('totalInterest').textContent = formatCurrency(totalInterest);
+                document.getElementById('finalDate').textContent = formatDate(finalDate);
+                
+                summarySection.style.display = 'flex';
+                amortizationSection.style.display = 'block';
+                
+                // Generate table
+                generateTable(schedule, paymentFrequency);
+            }
+            
+            function generateTable(schedule, frequency) {
+                let tableHTML = '<table>';
+                tableHTML += '<thead><tr>';
+                tableHTML += '<th>Payment #</th>';
+                tableHTML += '<th>Date</th>';
+                tableHTML += `<th>Payment (${frequency === 'monthly' ? 'Monthly' : 'Annual'})</th>`;
+                tableHTML += '<th>Principal</th>';
+                tableHTML += '<th>Interest</th>';
+                tableHTML += '<th>Remaining Balance</th>';
+                tableHTML += '</tr></thead><tbody>';
+                
+                // Show first 12 rows and last row for long schedules
+                const showAll = schedule.length <= 24;
+                const rowsToShow = showAll ? schedule : [...schedule.slice(0, 12), ...schedule.slice(-1)];
+                
+                rowsToShow.forEach((row, index) => {
+                    const isLastRow = !showAll && index === rowsToShow.length - 1;
+                    const className = isLastRow ? 'highlight' : '';
+                    
+                    tableHTML += `<tr class="${className}">`;
+                    tableHTML += `<td>${row.paymentNumber}</td>`;
+                    tableHTML += `<td>${formatDate(row.date)}</td>`;
+                    tableHTML += `<td>${formatCurrency(row.payment)}</td>`;
+                    tableHTML += `<td>${formatCurrency(row.principal)}</td>`;
+                    tableHTML += `<td>${formatCurrency(row.interest)}</td>`;
+                    tableHTML += `<td>${formatCurrency(row.balance)}</td>`;
+                    tableHTML += `</tr>`;
+                });
+                
+                if (!showAll) {
+                    tableHTML += '<tr><td colspan="6" style="text-align: center; padding: 10px;">...</td></tr>';
+                }
+                
+                tableHTML += '</tbody></table>';
+                
+                tableContainer.innerHTML = tableHTML;
+            }
+            
+            function exportCSV() {
+                const loanAmount = parseFloat(document.getElementById('loanAmount').value);
+                const interestRate = parseFloat(document.getElementById('interestRate').value);
+                const loanTerm = parseInt(document.getElementById('loanTerm').value);
+                const paymentFrequency = document.getElementById('paymentFrequency').value;
+                const startDate = new Date(document.getElementById('startDate').value);
+                
+                let schedule = [];
+                
+                if (paymentFrequency === 'monthly') {
+                    const monthlyRate = interestRate / 1200;
+                    const numPayments = loanTerm * 12;
+                    
+                    // Calculate monthly payment
+                    const paymentAmount = loanAmount * monthlyRate * Math.pow(1 + monthlyRate, numPayments) / 
+                                          (Math.pow(1 + monthlyRate, numPayments) - 1);
+                    
+                    let balance = loanAmount;
+                    let currentDate = new Date(startDate);
+                    
+                    for (let i = 1; i <= numPayments; i++) {
+                        const interestPayment = balance * monthlyRate;
+                        const principalPayment = paymentAmount - interestPayment;
+                        balance -= principalPayment;
+                        
+                        if (balance < 0) balance = 0;
+                        
+                        schedule.push({
+                            paymentNumber: i,
+                            date: formatDate(currentDate),
+                            payment: paymentAmount,
+                            principal: principalPayment,
+                            interest: interestPayment,
+                            balance: balance
+                        });
+                        
+                        currentDate.setMonth(currentDate.getMonth() + 1);
+                    }
+                } else {
+                    const annualRate = interestRate / 100;
+                    const numPayments = loanTerm;
+                    
+                    // Calculate annual payment
+                    const paymentAmount = loanAmount * annualRate * Math.pow(1 + annualRate, numPayments) / 
+                                          (Math.pow(1 + annualRate, numPayments) - 1);
+                    
+                    let balance = loanAmount;
+                    let currentDate = new Date(startDate);
+                    
+                    for (let i = 1; i <= numPayments; i++) {
+                        const interestPayment = balance * annualRate;
+                        const principalPayment = paymentAmount - interestPayment;
+                        balance -= principalPayment;
+                        
+                        if (balance < 0) balance = 0;
+                        
+                        schedule.push({
+                            paymentNumber: i,
+                            date: formatDate(currentDate),
+                            payment: paymentAmount,
+                            principal: principalPayment,
+                            interest: interestPayment,
+                            balance: balance
+                        });
+                        
+                        currentDate.setFullYear(currentDate.getFullYear() + 1);
+                    }
+                }
+                
+                // Create CSV content
+                let csvContent = "data:text/csv;charset=utf-8,";
+                csvContent += "Payment #,Date,Payment,Principal,Interest,Remaining Balance\n";
+                
+                schedule.forEach(row => {
+                    csvContent += `${row.paymentNumber},${row.date},${row.payment},${row.principal},${row.interest},${row.balance}\n`;
+                });
+                
+                // Download CSV file
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `amortization_schedule_${new Date().toISOString().slice(0,10)}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+            
+            function formatCurrency(amount) {
+                return '₱' + amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+            }
+            
+            function formatDate(date) {
+                const options = { year: 'numeric', month: 'short', day: 'numeric' };
+                return date.toLocaleDateString(undefined, options);
+            }
+        });
+    </script>
+</body>
+</html>
