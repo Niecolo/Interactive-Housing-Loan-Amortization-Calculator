@@ -153,6 +153,13 @@
             border-radius: 5px;
         }
         
+        .additional-payment {
+            background-color: #e8f5e9;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
         @media (max-width: 768px) {
             .input-section {
                 flex-direction: column;
@@ -198,6 +205,16 @@
             </div>
         </div>
         
+        <!-- Additional Principal Payment Section -->
+        <div class="additional-payment">
+            <h3>➕ Additional Principal Payments</h3>
+            <div class="input-group">
+                <label for="additionalPayment">Additional Monthly Principal Payment (₱):</label>
+                <input type="number" id="additionalPayment" value="0" min="0" step="100">
+            </div>
+            <p><small>Adding extra principal payments will reduce your total interest and shorten your loan term.</small></p>
+        </div>
+        
         <button id="calculateBtn">Calculate Amortization Schedule</button>
         
         <div id="summarySection" class="summary" style="display: none;">
@@ -216,6 +233,10 @@
             <div class="summary-item">
                 <h3>Final Payment Date</h3>
                 <p id="finalDate">-</p>
+            </div>
+            <div class="summary-item">
+                <h3>Loan Term Reduction</h3>
+                <p id="termReduction">-</p>
             </div>
         </div>
         
@@ -250,6 +271,7 @@
                 const loanTerm = parseInt(document.getElementById('loanTerm').value);
                 const paymentFrequency = document.getElementById('paymentFrequency').value;
                 const startDate = new Date(document.getElementById('startDate').value);
+                const additionalPayment = parseFloat(document.getElementById('additionalPayment').value) || 0;
                 
                 if (isNaN(loanAmount) || isNaN(interestRate) || isNaN(loanTerm)) {
                     alert('Please enter valid numbers for all fields.');
@@ -261,6 +283,8 @@
                 let totalInterest;
                 let finalDate;
                 let schedule = [];
+                let originalTerm = loanTerm;
+                let actualTerm = loanTerm;
                 
                 if (paymentFrequency === 'monthly') {
                     // Monthly calculation
@@ -271,38 +295,55 @@
                     paymentAmount = loanAmount * monthlyRate * Math.pow(1 + monthlyRate, numPayments) / 
                                    (Math.pow(1 + monthlyRate, numPayments) - 1);
                     
-                    totalPayments = paymentAmount * numPayments;
-                    totalInterest = totalPayments - loanAmount;
-                    
-                    // Calculate final date
-                    finalDate = new Date(startDate);
-                    finalDate.setMonth(finalDate.getMonth() + numPayments);
-                    
-                    // Generate amortization schedule
+                    // Generate amortization schedule with additional payments
                     let balance = loanAmount;
                     let currentDate = new Date(startDate);
+                    let paymentNumber = 1;
                     
-                    for (let i = 1; i <= numPayments; i++) {
+                    while (balance > 0) {
                         const interestPayment = balance * monthlyRate;
                         const principalPayment = paymentAmount - interestPayment;
-                        balance -= principalPayment;
+                        
+                        // Add additional principal payment
+                        const totalPrincipalPayment = principalPayment + additionalPayment;
+                        
+                        // Ensure we don't overpay
+                        const actualPrincipalPayment = Math.min(totalPrincipalPayment, balance);
+                        const actualPayment = interestPayment + actualPrincipalPayment;
+                        
+                        balance -= actualPrincipalPayment;
                         
                         if (balance < 0) balance = 0;
                         
                         schedule.push({
-                            paymentNumber: i,
+                            paymentNumber: paymentNumber,
                             date: new Date(currentDate),
-                            payment: paymentAmount,
-                            principal: principalPayment,
+                            payment: actualPayment,
+                            principal: actualPrincipalPayment,
                             interest: interestPayment,
                             balance: balance
                         });
                         
                         // Move to next month
                         currentDate.setMonth(currentDate.getMonth() + 1);
+                        paymentNumber++;
+                        
+                        // If balance is zero, break
+                        if (balance <= 0) break;
                     }
+                    
+                    // Calculate totals
+                    totalPayments = schedule.reduce((sum, row) => sum + row.payment, 0);
+                    totalInterest = totalPayments - loanAmount;
+                    
+                    // Calculate final date
+                    finalDate = new Date(schedule[schedule.length - 1].date);
+                    
+                    // Calculate actual term in years
+                    actualTerm = Math.ceil(schedule.length / 12);
+                    
                 } else {
-                    // Annual calculation
+                    // Annual calculation (no additional payments for annual)
                     const annualRate = interestRate;
                     const numPayments = loanTerm;
                     
@@ -347,6 +388,15 @@
                 document.getElementById('totalPayments').textContent = formatCurrency(totalPayments);
                 document.getElementById('totalInterest').textContent = formatCurrency(totalInterest);
                 document.getElementById('finalDate').textContent = formatDate(finalDate);
+                
+                // Show term reduction if additional payments were made
+                if (additionalPayment > 0 && paymentFrequency === 'monthly') {
+                    const termReductionYears = originalTerm - actualTerm;
+                    const termReductionMonths = (originalTerm * 12) - schedule.length;
+                    document.getElementById('termReduction').textContent = `${termReductionYears} years, ${termReductionMonths % 12} months`;
+                } else {
+                    document.getElementById('termReduction').textContent = "N/A";
+                }
                 
                 summarySection.style.display = 'flex';
                 amortizationSection.style.display = 'block';
@@ -399,6 +449,7 @@
                 const loanTerm = parseInt(document.getElementById('loanTerm').value);
                 const paymentFrequency = document.getElementById('paymentFrequency').value;
                 const startDate = new Date(document.getElementById('startDate').value);
+                const additionalPayment = parseFloat(document.getElementById('additionalPayment').value) || 0;
                 
                 let schedule = [];
                 
@@ -412,24 +463,38 @@
                     
                     let balance = loanAmount;
                     let currentDate = new Date(startDate);
+                    let paymentNumber = 1;
                     
-                    for (let i = 1; i <= numPayments; i++) {
+                    while (balance > 0) {
                         const interestPayment = balance * monthlyRate;
                         const principalPayment = paymentAmount - interestPayment;
-                        balance -= principalPayment;
+                        
+                        // Add additional principal payment
+                        const totalPrincipalPayment = principalPayment + additionalPayment;
+                        
+                        // Ensure we don't overpay
+                        const actualPrincipalPayment = Math.min(totalPrincipalPayment, balance);
+                        const actualPayment = interestPayment + actualPrincipalPayment;
+                        
+                        balance -= actualPrincipalPayment;
                         
                         if (balance < 0) balance = 0;
                         
                         schedule.push({
-                            paymentNumber: i,
+                            paymentNumber: paymentNumber,
                             date: formatDate(currentDate),
-                            payment: paymentAmount,
-                            principal: principalPayment,
+                            payment: actualPayment,
+                            principal: actualPrincipalPayment,
                             interest: interestPayment,
                             balance: balance
                         });
                         
+                        // Move to next month
                         currentDate.setMonth(currentDate.getMonth() + 1);
+                        paymentNumber++;
+                        
+                        // If balance is zero, break
+                        if (balance <= 0) break;
                     }
                 } else {
                     const annualRate = interestRate / 100;
